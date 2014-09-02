@@ -46,7 +46,6 @@ d3.csv('data/201402_trip_data.csv', function(error, csv_data) {
     d.subscriberDuration = Math.round(d.values[1].values * 100) / 100;
     d.customerDuration = Math.round(d.values[0].values * 100) / 100;
     d.avgMinutes = d.subscriberDuration + d.customerDuration;
-    // console.log(d);
   });
   asyncCallComplete();
 });
