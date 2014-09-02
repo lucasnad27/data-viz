@@ -106,10 +106,13 @@ function makeGraph(){
       .call(yAxis)
     .append('text')
       .attr('transform', 'rotate(-90)')
-      .attr('y', 6)
+      .attr('y', 0 - 40)
+      .attr('x', 0 - (.67 * height))
       .attr('dy', '.71em')
       .style('text-anchor', 'end')
-      .text('Mean Trip Duration');
+      .attr('style', 'font-size:14px;')
+      .text('Mean Trip Duration (minutes)');
+  console.log(height);
 
   var layer = chart.selectAll('.layer')
       .data(layers)
