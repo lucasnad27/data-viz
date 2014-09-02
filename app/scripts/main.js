@@ -42,7 +42,6 @@ d3.csv('data/201402_trip_data.csv', function(error, csv_data) {
     }).entries(csv_data);
   data.forEach(function(d){
     d.city = d.key;
-    console.log(d.values[1]);
     d.subscriberDuration = Math.round(d.values[1].values * 100) / 100;
     d.customerDuration = Math.round(d.values[0].values * 100) / 100;
     d.avgMinutes = d.subscriberDuration + d.customerDuration;
@@ -78,13 +77,18 @@ function makeGraph(){
 
   var color = d3.scale.linear()
     .domain([0, n - 1])
-    .range(['#7C858B', '#D75662']);
+    .range([{ color: '#7C858B', 'text': 'Customer' }, { color: '#D75662', 'text': 'Subscriber' }]);
 
   var xAxis = d3.svg.axis()
       .scale(x)
       .tickSize(0)
       .tickPadding(6)
       .orient('bottom');
+
+  var yAxis = d3.svg.axis()
+      .scale(y)
+      .orient('left')
+      .ticks(10);
 
   var chart = d3.select('.chart')
       .attr('width', width + margin.left + margin.right)
@@ -97,15 +101,48 @@ function makeGraph(){
       .attr('transform', 'translate(0,' + height + ')')
       .call(xAxis);
 
+  chart.append('g')
+      .attr('class', 'y axis')
+      .call(yAxis)
+    .append('text')
+      .attr('transform', 'rotate(-90)')
+      .attr('y', 6)
+      .attr('dy', '.71em')
+      .style('text-anchor', 'end')
+      .text('Mean Trip Duration');
+
   var layer = chart.selectAll('.layer')
       .data(layers)
     .enter().append('g')
       .attr('class', 'layer')
-      .style('fill', function(d, i) { return color(i); });
+      .style('fill', function(d, i) { return color(i).color; });
+
+  var legend = chart.selectAll('.legend')
+      .data(color.range().map(function(d) { return d.text; }).reverse())
+    .enter().append('g')
+      .attr('class', 'legend')
+      .attr('transform', function(d, i) { return 'translate(0,' + i * 20 + ')'; });
+
+  var legendOffset = 120;
+  legend.append('rect')
+      .attr('x', legendOffset + 6)
+      .attr('width', 18)
+      .attr('height', 18)
+      .style('fill', function(d, i) { return color(i).color });
+
+  legend.append('text')
+      .attr('x', legendOffset)
+      .attr('y', 9)
+      .attr('dy', '.35em')
+      .style('text-anchor', 'end')
+      .text(function(d) {
+        console.log(color(d));
+        return d; });
 
   rect = layer.selectAll('rect')
       .data(function(d) { return d; })
     .enter().append('rect')
+      .attr('class', 'bar')
       .attr('x', function(d) { return x(d.x); })
       .attr('y', height)
       .attr('width', x.rangeBand())
