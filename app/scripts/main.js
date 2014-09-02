@@ -35,13 +35,18 @@ d3.csv('data/201402_trip_data.csv', function(error, csv_data) {
   });
   data = d3.nest()
     .key(function(d) { return d.city })
+    .key(function(d) { return d['Subscription Type']})
     .sortKeys(d3.ascending)
     .rollup(function(d){
       return d3.mean(d, function(g) { return g.Duration / 60; });
     }).entries(csv_data);
   data.forEach(function(d){
     d.city = d.key;
-    d.avgMinutes = Math.round(d.values * 100) / 100;
+    console.log(d.values[1]);
+    d.subscriberDuration = Math.round(d.values[1].values * 100) / 100;
+    d.customerDuration = Math.round(d.values[0].values * 100) / 100;
+    d.avgMinutes = d.subscriberDuration + d.customerDuration;
+    // console.log(d);
   });
   asyncCallComplete();
 });
@@ -151,6 +156,6 @@ function transitionStacked() {
 }
 
 function getVariableValues(n) {
-  if (n == 0) return data.map(function(d) { return {x: d.city, y: d.avgMinutes, totalMinutes: d.avgMinutes} });
-  else return data.map(function(d) { return {x: d.city, y: d.avgMinutes / 2, totalMinutes: d.avgMinutes} });
+  if (n == 0) return data.map(function(d) { return {x: d.city, y: d.subscriberDuration, totalMinutes: d.avgMinutes} });
+  else return data.map(function(d) { return {x: d.city, y: d.customerDuration, totalMinutes: d.avgMinutes} });
 }
