@@ -16,49 +16,11 @@ var stations = {},
     height,
     rect;
 
-var timeout = setTimeout(function() {
-  d3.select('input[value="grouped"]').property('checked', true).each(change);
-}, 2000);
-
-d3.csv('data/201402_station_data.csv', function(d){
-  return d;
-}, function(error, rows) {
-  rows.forEach(function(d){
-    stations[d.name] = d.landmark;
-  })
-  asyncCallComplete();
-});
-
-d3.csv('data/201402_trip_data.csv', function(error, csv_data) {
-  csv_data.forEach(function(d){
-    d.city = stations[d['Start Station']]
-  });
-  data = d3.nest()
-    .key(function(d) { return d.city })
-    .key(function(d) { return d['Subscription Type']})
-    .sortKeys(d3.ascending)
-    .rollup(function(d){
-      return d3.mean(d, function(g) { return g.Duration / 60; });
-    }).entries(csv_data);
-  data.forEach(function(d){
-    d.city = d.key;
-    d.subscriberDuration = Math.round(d.values[1].values * 100) / 100;
-    d.customerDuration = Math.round(d.values[0].values * 100) / 100;
-    d.avgMinutes = d.subscriberDuration + d.customerDuration;
-  });
-  asyncCallComplete();
-});
-
-function asyncCallComplete() {
-  --asyncCallsRemaining;
-  if (asyncCallsRemaining <= 0) makeGraph();
-}
-
 function makeGraph(){
   n = 2;
   m = 5;
   var stack = d3.layout.stack(),
-      layers = stack(d3.range(n).map(function(i) { return getVariableValues(i); }))
+      layers = stack(d3.range(n).map(function(i) { return getVariableValues(i); }));
   yGroupMax = d3.max(layers, function(layer) { return d3.max(layer, function(d) { return d.y; }); }),
   yStackMax = d3.max(layers, function(layer) { return d3.max(layer, function(d) { return d.y0 + d.y; }); });
 
@@ -131,16 +93,14 @@ function makeGraph(){
       .attr('x', legendOffset + 6)
       .attr('width', 18)
       .attr('height', 18)
-      .style('fill', function(d, i) { return color(i).color });
+      .style('fill', function(d, i) { return color(i).color; });
 
   legend.append('text')
       .attr('x', legendOffset)
       .attr('y', 9)
       .attr('dy', '.35em')
       .style('text-anchor', 'end')
-      .text(function(d) {
-        console.log(color(d));
-        return d; });
+      .text(function(d) { return d; });
 
   rect = layer.selectAll('rect')
       .data(function(d) { return d; })
@@ -154,7 +114,7 @@ function makeGraph(){
   rect.transition()
       .delay(function(d, i) { return i * 10; })
       .attr('y', function(d) { return y(d.y0 + d.y); })
-      .attr("height", function(d) { return y(d.y0) - y(d.y0 + d.y); });
+      .attr('height', function(d) { return y(d.y0) - y(d.y0 + d.y); });
 
   d3.selectAll('input').on('change', change);
 
@@ -162,10 +122,10 @@ function makeGraph(){
 
 function change() {
   // check for data population
-  if (asyncCallsRemaining > 0) return;
+  if (asyncCallsRemaining > 0) { return; }
   clearTimeout(timeout);
-  if (this.value === 'grouped') transitionGrouped();
-  else transitionStacked();
+  if (this.value === 'grouped') { transitionGrouped(); }
+  else { transitionStacked(); }
 }
 
 function transitionGrouped() {
@@ -195,6 +155,44 @@ function transitionStacked() {
 }
 
 function getVariableValues(n) {
-  if (n == 0) return data.map(function(d) { return {x: d.city, y: d.subscriberDuration, totalMinutes: d.avgMinutes} });
-  else return data.map(function(d) { return {x: d.city, y: d.customerDuration, totalMinutes: d.avgMinutes} });
+  if (n === 0) { return data.map(function(d) { return {x: d.city, y: d.subscriberDuration, totalMinutes: d.avgMinutes}; }); }
+  else { return data.map(function(d) { return {x: d.city, y: d.customerDuration, totalMinutes: d.avgMinutes}; }); }
 }
+
+function asyncCallComplete() {
+  --asyncCallsRemaining;
+  if (asyncCallsRemaining <= 0) { makeGraph(); }
+}
+
+var timeout = setTimeout(function() {
+  d3.select('input[value="grouped"]').property('checked', true).each(change);
+}, 2000);
+
+d3.csv('data/201402_station_data.csv', function(d){
+  return d;
+}, function(error, rows) {
+  rows.forEach(function(d){
+    stations[d.name] = d.landmark;
+  });
+  asyncCallComplete();
+});
+
+d3.csv('data/201402_trip_data.csv', function(error, csvData) {
+  csvData.forEach(function(d){
+    d.city = stations[d['Start Station']];
+  });
+  data = d3.nest()
+    .key(function(d) { return d.city; })
+    .key(function(d) { return d['Subscription Type']; })
+    .sortKeys(d3.ascending)
+    .rollup(function(d){
+      return d3.mean(d, function(g) { return g.Duration / 60; });
+    }).entries(csvData);
+  data.forEach(function(d){
+    d.city = d.key;
+    d.subscriberDuration = Math.round(d.values[1].values * 100) / 100;
+    d.customerDuration = Math.round(d.values[0].values * 100) / 100;
+    d.avgMinutes = d.subscriberDuration + d.customerDuration;
+  });
+  asyncCallComplete();
+});
