@@ -27,12 +27,23 @@
                 <h3 class="text-muted">data viz</h3>
             </div>
             <p>To celebrate six months of operation, Bay Area Bike Share released a detailed data set, and encouraged developers, designers, and anyone with a bit of curiosity to present the data in visually compelling ways. The purpose of the below visualization utilizes d3.js to manipulate raw csv data client-side and visualize it in various visually compelling ways. In partricular, the main variable examined is average duration of trip.</p>
-            <div class="pull-right">
-                <label class='radio-inline'><input type="radio" name="mode" value="grouped"> Grouped</label>
-                <label class='radio-inline'><input type="radio" name="mode" value="stacked" checked> Stacked</label>
-            </div>
-            <div class="jumbotron">
-                <svg class="chart"></svg>
+            <div class="row">
+                <div class="col-md-7">
+                    <div class="pull-right">
+                        <label class='radio-inline'><input type="radio" name="mode" value="grouped"> Grouped</label>
+                        <label class='radio-inline'><input type="radio" name="mode" value="stacked" checked> Stacked</label>
+                    </div>
+                    <div class="jumbotron">
+                        <svg class="chart"></svg>
+                    </div>
+                </div>
+                <div class="col-md-5">
+                    <div class="jumbotron">
+                        <svg class="dashboard">
+                            <div id="tooltip"></div>
+                        </svg>
+                    </div>
+                </div>
             </div>
 
             <div class="footer">

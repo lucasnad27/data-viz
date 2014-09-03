@@ -1,6 +1,7 @@
 'use strict';
 
 var stations = {},
+    pieData,
     data,
     asyncCallsRemaining = 2,
     n,
@@ -58,6 +59,14 @@ function makeGraph(){
     .append('g')
       .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
 
+  chart.append('text')
+          .attr('x', (width / 2))
+          .attr('y', 0 - (margin.top / 2) + 10)
+          .attr('text-anchor', 'middle')
+          .style('font-size', '16px')
+          .style('text-decoration', 'underline')
+          .text('Duration of Bike Trip By City');
+
   chart.append('g')
       .attr('class', 'x axis')
       .attr('transform', 'translate(0,' + height + ')')
@@ -74,7 +83,6 @@ function makeGraph(){
       .style('text-anchor', 'end')
       .attr('style', 'font-size:14px;')
       .text('Median Trip Duration (minutes)');
-  console.log(height);
 
   var layer = chart.selectAll('.layer')
       .data(layers)
@@ -161,9 +169,78 @@ function getVariableValues(n) {
 
 function asyncCallComplete() {
   --asyncCallsRemaining;
-  if (asyncCallsRemaining <= 0) { makeGraph(); }
+  if (asyncCallsRemaining <= 0) {
+    makeGraph();
+    pieChart();
+  }
 }
 
+function pieChart(){
+  var pieWidth = 400 - margin.left - margin.right,
+      pieHeight = 600 - margin.top - margin.bottom;
+  var radius = Math.min(pieWidth, pieHeight) / 2;
+
+  var color = d3.scale.ordinal()
+      .range(['#7fc97f', '#beaed4', '#fdc086', '#ffff99', '#386cb0']);
+
+  var arc = d3.svg.arc()
+      .outerRadius(radius - 10)
+      .innerRadius(0);
+
+  var pie = d3.layout.pie()
+      .sort(null)
+      .value(function(d) { return d.totalTrips; });
+
+  var svg = d3.select('.dashboard')
+      .attr('width', width)
+      .attr('height', height)
+    .append('g')
+      .attr('transform', 'translate(' + width / 3 + ',' + height / 2 + ')')
+
+  svg.append('text')
+          .attr('x', (pieWidth / 2) - 180)
+          .attr('y', 0 - (margin.top / 2) - 180)
+          .attr('text-anchor', 'middle')
+          .style('font-size', '16px')
+          .style('text-decoration', 'underline')
+          .text('Total Number of Trips by City');
+
+  var text;
+  var g = svg.selectAll('.arc')
+      .data(pie(pieData))
+    .enter().append('g')
+      .attr('class', 'arc')
+      .on('mouseover', function(d){
+        $('#tooltip')
+          .html(d.data.city)
+          .show()
+      })
+      .on('mousemove', function(d) {
+        $('#tooltip')
+          .css('left', d3.mouse(this)[0])
+          .css('top', d3.mouse(this)[1]-20)
+        })
+      .on('mouseout', function(d) {
+        $('#tooltip').html('').hide();
+      });
+      // .on('mouseover', function(d){
+      //     text = g.append('text')
+      //         .attr('transform', 'translate(' + 0 + ',' + 0 - (pieHeight / 2) + ')')
+      //         .attr('dy', '.5em')
+      //         .style('text-anchor', 'middle')
+      //         .style('fill', '#7C858B')
+      //         .attr('class', 'on')
+      //         .text(d.data.city);
+      // })
+      // .on('mouseout', function(d) {
+      //          text.remove();
+      // });
+
+  g.append('path')
+      .attr('d', arc)
+      .style('fill', function(d) { return color(d.data.city); })
+
+}
 var timeout = setTimeout(function() {
   d3.select('input[value="grouped"]').property('checked', true).each(change);
 }, 2000);
@@ -194,5 +271,15 @@ d3.csv('data/201402_trip_data.csv', function(error, csvData) {
     d.customerDuration = Math.round(d.values[0].values * 100) / 100;
     d.avgMinutes = d.subscriberDuration + d.customerDuration;
   });
+  pieData = d3.nest()
+    .key(function(d) { return d.city; })
+    .sortKeys(d3.ascending)
+    .rollup(function(d){
+      return d3.sum(d, function(g) { return 1; });
+    }).entries(csvData);
+  pieData.forEach(function(d){
+    d.totalTrips = d.values;
+    d.city = d.key;
+  })
   asyncCallComplete();
 });
