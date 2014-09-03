@@ -73,7 +73,7 @@ function makeGraph(){
       .attr('dy', '.71em')
       .style('text-anchor', 'end')
       .attr('style', 'font-size:14px;')
-      .text('Mean Trip Duration (minutes)');
+      .text('Median Trip Duration (minutes)');
   console.log(height);
 
   var layer = chart.selectAll('.layer')
@@ -186,7 +186,7 @@ d3.csv('data/201402_trip_data.csv', function(error, csvData) {
     .key(function(d) { return d['Subscription Type']; })
     .sortKeys(d3.ascending)
     .rollup(function(d){
-      return d3.mean(d, function(g) { return g.Duration / 60; });
+      return d3.median(d, function(g) { return g.Duration / 60; });
     }).entries(csvData);
   data.forEach(function(d){
     d.city = d.key;
