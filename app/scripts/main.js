@@ -5,8 +5,6 @@ var stations = {},
     asyncCallsRemaining = 2,
     n,
     m,
-    stack,
-    layers,
     yGroupMax,
     yStackMax,
     x,
@@ -17,7 +15,7 @@ var stations = {},
     rect;
 
 function makeGraph(){
-  n = 2;
+  n = 4;
   m = 5;
   var stack = d3.layout.stack(),
       layers = stack(d3.range(n).map(function(i) { return getVariableValues(i); }));
@@ -39,7 +37,7 @@ function makeGraph(){
 
   var color = d3.scale.linear()
     .domain([0, n - 1])
-    .range([{ color: '#7C858B', 'text': 'Customer' }, { color: '#D75662', 'text': 'Subscriber' }]);
+    .range(['#7C858B', '#D75662']);
 
   var xAxis = d3.svg.axis()
       .scale(x)
@@ -73,34 +71,34 @@ function makeGraph(){
       .attr('dy', '.71em')
       .style('text-anchor', 'end')
       .attr('style', 'font-size:14px;')
-      .text('Mean Trip Duration (minutes)');
-  console.log(height);
+      .text('Trip Duration (minutes)');
 
   var layer = chart.selectAll('.layer')
       .data(layers)
     .enter().append('g')
       .attr('class', 'layer')
-      .style('fill', function(d, i) { return color(i).color; });
+      .style('fill', function(d, i) { return color(i); });
 
+  var legendLabels = ['Subscriber (mean)', 'Customer (mean)', 'Subscriber (median)', 'Customer (median)']
   var legend = chart.selectAll('.legend')
-      .data(color.range().map(function(d) { return d.text; }).reverse())
+      .data(d3.range(n).map(function(i) { return {color: color(i), type: legendLabels[i]}; }))
     .enter().append('g')
       .attr('class', 'legend')
       .attr('transform', function(d, i) { return 'translate(0,' + i * 20 + ')'; });
 
-  var legendOffset = 120;
+  var legendOffset = 185;
   legend.append('rect')
       .attr('x', legendOffset + 6)
       .attr('width', 18)
       .attr('height', 18)
-      .style('fill', function(d, i) { return color(i).color; });
+      .style('fill', function(d, i) { return color(i); });
 
   legend.append('text')
       .attr('x', legendOffset)
       .attr('y', 9)
       .attr('dy', '.35em')
       .style('text-anchor', 'end')
-      .text(function(d) { return d; });
+      .text(function(d) { return d.type; });
 
   rect = layer.selectAll('rect')
       .data(function(d) { return d; })
@@ -117,7 +115,6 @@ function makeGraph(){
       .attr('height', function(d) { return y(d.y0) - y(d.y0 + d.y); });
 
   d3.selectAll('input').on('change', change);
-
 }
 
 function change() {
@@ -155,8 +152,10 @@ function transitionStacked() {
 }
 
 function getVariableValues(n) {
-  if (n === 0) { return data.map(function(d) { return {x: d.city, y: d.subscriberDuration, totalMinutes: d.avgMinutes}; }); }
-  else { return data.map(function(d) { return {x: d.city, y: d.customerDuration, totalMinutes: d.avgMinutes}; }); }
+  if (n === 0) { return data.map(function(d) { return {x: d.city, y: d.mean.subscriber, totalMinutes: d.mean.total}; }); }
+  if (n === 1) { return data.map(function(d) { return {x: d.city, y: d.mean.customer, totalMinutes: d.mean.total}; }); }
+  if (n === 2) { return data.map(function(d) { return {x: d.city, y: d.median.subscriber, totalMinutes: d.median.total}; }); }
+  if (n === 3) { return data.map(function(d) { return {x: d.city, y: d.median.customer, totalMinutes: d.median.total}; }); }
 }
 
 function asyncCallComplete() {
@@ -186,13 +185,23 @@ d3.csv('data/201402_trip_data.csv', function(error, csvData) {
     .key(function(d) { return d['Subscription Type']; })
     .sortKeys(d3.ascending)
     .rollup(function(d){
-      return d3.mean(d, function(g) { return g.Duration / 60; });
+      return {
+        mean: d3.mean(d, function(g) { return g.Duration / 60; }),
+        median: d3.median(d, function(g) { return g.Duration / 60; })
+      };
     }).entries(csvData);
   data.forEach(function(d){
     d.city = d.key;
-    d.subscriberDuration = Math.round(d.values[1].values * 100) / 100;
-    d.customerDuration = Math.round(d.values[0].values * 100) / 100;
-    d.avgMinutes = d.subscriberDuration + d.customerDuration;
+    d.mean = {
+      subscriber: Math.round(d.values[1].values.mean * 100) / 100,
+      customer: Math.round(d.values[0].values.mean * 100) / 100
+    }
+    d.median = {
+      subscriber: Math.round(d.values[1].values.median * 100) / 100,
+      customer: Math.round(d.values[0].values.median * 100) / 100
+    }
+    d.mean.total = d.subscriberMeanDuration + d.customerMeanDuration;
+    d.median.total = d.subscriberMedianDuration + d.customerMedianDuration;
   });
   asyncCallComplete();
 });
